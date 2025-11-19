@@ -154,6 +154,14 @@ CREATE TABLE meta.load_history (
 
 ![alt text](materials/image-11.png)
 
+## Pentaho Installation and Setup
+
+- Download and install Pentaho Data Integration (PDI).
+
+- Extract the ZIP file and run `spoon.bat`.
+
+Create a new database connection to PostgreSQL in PDI for my database `sales_warehouse`.
+
 ![alt text](materials/image-12.png)
 
 ![alt text](materials/image-13.png)
@@ -162,18 +170,26 @@ CREATE TABLE meta.load_history (
 
 ![alt text](materials/image-15.png)
 
-![alt text](materials/image-16.png)
+**_1. Created transformations for Incremental Load process._**
+
+First, create a transformation to get the last load date from the `core.sales` table.
+
+Create a table input step with the following query to get the last load date.
 
 ```sql
 SELECT COALESCE(MAX(transactional_date), '2000-01-01'::TIMESTAMP) as LastLoadDate
 FROM core.sales
 ```
 
-![alt text](materials/image-17.png)
-
 ![alt text](materials/image-18.png)
 
+- Next, set the variable `v_LastLoadDate` to store the last load date.
+
 ![alt text](materials/image-19.png)
+
+**_2. Create the build transformation to extract only new records from the source table based on the last load date._**
+
+First, create a table input step with the following query to extract new records.
 
 ```sql
 SELECT
@@ -192,11 +208,19 @@ WHERE transactional_date > '${v_LastLoadDate}'
 ORDER BY transaction_id
 ```
 
+Then add select values to fix the data types.
+
 ![alt text](materials/image-20.png)
+
+Then create a insert/update step to load the new records into the `staging.sales` table.
 
 ![alt text](materials/image-21.png)
 
+It is tested and the transformation works fine.
+
 ![alt text](materials/image-22.png)
+
+3. **Create the main ETL transformation to load data from staging to core schema.**
 
 ```sql
 SELECT * FROM staging.sales
